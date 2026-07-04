@@ -83,11 +83,14 @@ class BookingRequest(BaseModel):
     @field_validator("preferred_time")
     @classmethod
     def validate_time_format(cls, v: str) -> str:
+        from app.utils.date_utils import parse_time as _parse_time
+        import datetime as _dt
         try:
-            time.fromisoformat(v)
+            parsed = _parse_time(v.strip())
+            # Normalise to HH:MM 24-hour format
+            return parsed.strftime("%H:%M")
         except ValueError:
-            raise ValueError("Time must be in HH:MM format.")
-        return v
+            raise ValueError("Time must be in HH:MM or h:MM AM/PM format.")
 
     @field_validator("full_name")
     @classmethod

@@ -39,10 +39,12 @@ def parse_date(date_str: str) -> date:
 
 
 def parse_time(time_str: str) -> time:
-    """Parse HH:MM (or HH:MM:SS) into a time object."""
-    for fmt in ("%H:%M:%S", "%H:%M"):
+    """Parse time string into a time object.
+    Accepts: HH:MM, HH:MM:SS (24-hour) and h:MM AM/PM, hh:MM AM/PM (12-hour).
+    """
+    for fmt in ("%H:%M:%S", "%H:%M", "%I:%M %p", "%I:%M%p"):
         try:
-            return datetime.strptime(time_str, fmt).time()
+            return datetime.strptime(time_str.strip(), fmt).time()
         except ValueError:
             continue
     raise ValueError(f"Cannot parse time string: {time_str!r}")
