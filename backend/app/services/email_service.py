@@ -208,10 +208,12 @@ def send_confirmation_email(record: BookingRecord) -> Tuple[bool, str]:
     subject = f"Appointment Confirmed – {CLINIC_NAME} | {record.booking_id}"
 
     try:
+        # Resend free tier only allows sending to the account owner's email.
+        # For demo purposes, all confirmations go to the clinic admin email.
         resend.Emails.send({
             "from": f"{CLINIC_NAME} <onboarding@resend.dev>",
-            "to": [recipient],
-            "subject": subject,
+            "to": ["tarak510605@gmail.com"],
+            "subject": subject + f" (Patient: {recipient})",
             "html": _build_confirmation_html(record),
             "text": _build_plain_text(record),
         })
