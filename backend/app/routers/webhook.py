@@ -313,3 +313,33 @@ async def retell_webhook(request: Request) -> Dict[str, Any]:
     # ── Unknown event ──────────────────────────────────────────────────────────
     logger.warning("Unknown RetellAI event type: '%s'", event)
     return {"status": "ignored", "event": event}
+
+
+# ── Direct tool endpoints (RetellAI Conductor Function nodes) ──────────────────
+# Conductor sends parameters directly as JSON body, not wrapped in event format.
+
+@router.post(
+    "/retell/tool/{tool_name}",
+    summary="RetellAI Conductor Direct Tool Call",
+    status_code=status.HTTP_200_OK,
+)
+async def retell_tool_direct(tool_name: str, request: Request) -> Dict[str, Any]:
+    """
+    Handles direct function calls from RetellAI Conductor flow nodes.
+    The Conductor sends raw parameters as JSON body (no event wrapper).
+    """
+    try:
+        arguments = await request.json()
+    except Exception:
+        arguments = {}
+
+    logger.info("Conductor tool call — tool=%s args=%s", tool_name, json.dumps(arguments))
+
+    handler = TOOL_HANDLERS.get(tool_name)
+    if not handler:
+        logger.warning("Unknown tool called: '%s'", tool_name)
+        return {"result": "I'm sorry, I don't have that capability right now."}
+
+    result = handler(arguments)
+    logger.info("Tool '%s' result: %s", tool_name, result[:120])
+    return {"result": result}
