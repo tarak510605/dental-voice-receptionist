@@ -27,7 +27,7 @@ logger = get_logger(__name__)
 settings = get_settings()
 
 _SMTP_HOST = "smtp.gmail.com"
-_SMTP_PORT = 587
+_SMTP_PORT = 465  # SSL — works on Render free tier (587/TLS is blocked)
 
 
 def _build_confirmation_html(record: BookingRecord) -> str:
@@ -218,9 +218,8 @@ def send_confirmation_email(record: BookingRecord) -> Tuple[bool, str]:
     message.attach(html_part)
 
     try:
-        with smtplib.SMTP(_SMTP_HOST, _SMTP_PORT, timeout=15) as server:
+        with smtplib.SMTP_SSL(_SMTP_HOST, _SMTP_PORT, timeout=15) as server:
             server.ehlo()
-            server.starttls()
             server.login(settings.GMAIL_SENDER_EMAIL, settings.GMAIL_APP_PASSWORD)
             server.sendmail(
                 settings.GMAIL_SENDER_EMAIL,
