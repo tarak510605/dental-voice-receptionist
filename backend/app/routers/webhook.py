@@ -334,8 +334,12 @@ async def retell_tool_direct(tool_name: str, request: Request) -> Dict[str, Any]
     except Exception:
         body = {}
 
-    # Strip the "call" wrapper added by RetellAI Conductor
-    arguments = {k: v for k, v in body.items() if k != "call"}
+    # RetellAI Conductor wraps args as {"name": "...", "args": {...}}
+    # Fall back to flat body for other formats
+    if "args" in body and isinstance(body["args"], dict):
+        arguments = body["args"]
+    else:
+        arguments = {k: v for k, v in body.items() if k not in ("call", "name")}
 
     # Normalise field name differences between Conductor and our schemas
     if tool_name == "book_appointment":
