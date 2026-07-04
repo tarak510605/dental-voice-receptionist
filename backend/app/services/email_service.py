@@ -1,15 +1,16 @@
 """
-Gmail SMTP email service.
+Resend email service.
 Sends professional HTML confirmation emails after a successful booking.
+Uses Resend API (HTTPS) instead of SMTP — works on Render free tier.
 Email failures are logged and surfaced as partial-success — they do NOT
 roll back a booking that has already been saved to Google Sheets.
 """
 
-import smtplib
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
+import os
 from datetime import datetime
 from typing import Tuple
+
+import resend
 
 from app.config.settings import get_settings
 from app.constants.clinic import (
@@ -25,9 +26,6 @@ from app.utils.logger import get_logger
 
 logger = get_logger(__name__)
 settings = get_settings()
-
-_SMTP_HOST = "smtp.gmail.com"
-_SMTP_PORT = 465  # SSL — works on Render free tier (587/TLS is blocked)
 
 
 def _build_confirmation_html(record: BookingRecord) -> str:
@@ -193,53 +191,34 @@ Thank you for choosing {CLINIC_NAME}. We look forward to seeing you!
 
 def send_confirmation_email(record: BookingRecord) -> Tuple[bool, str]:
     """
-    Send a confirmation email to the patient.
+    Send a confirmation email to the patient via Resend API.
 
     Returns:
         (success: bool, message: str)
         On failure the booking record is NOT rolled back — callers handle partial success.
     """
-    if not settings.GMAIL_SENDER_EMAIL or not settings.GMAIL_APP_PASSWORD:
-        msg = "Gmail credentials are not configured — skipping email."
+    api_key = os.environ.get("RESEND_API_KEY", "")
+    if not api_key:
+        msg = "RESEND_API_KEY is not configured — skipping email."
         logger.warning(msg)
         return False, msg
 
+    resend.api_key = api_key
     recipient = record.email
     subject = f"Appointment Confirmed – {CLINIC_NAME} | {record.booking_id}"
 
-    message = MIMEMultipart("alternative")
-    message["Subject"] = subject
-    message["From"] = f"{settings.GMAIL_SENDER_NAME} <{settings.GMAIL_SENDER_EMAIL}>"
-    message["To"] = recipient
-
-    plain_part = MIMEText(_build_plain_text(record), "plain", "utf-8")
-    html_part = MIMEText(_build_confirmation_html(record), "html", "utf-8")
-    message.attach(plain_part)
-    message.attach(html_part)
-
     try:
-        with smtplib.SMTP_SSL(_SMTP_HOST, _SMTP_PORT, timeout=15) as server:
-            server.ehlo()
-            server.login(settings.GMAIL_SENDER_EMAIL, settings.GMAIL_APP_PASSWORD)
-            server.sendmail(
-                settings.GMAIL_SENDER_EMAIL,
-                recipient,
-                message.as_string(),
-            )
+        resend.Emails.send({
+            "from": f"{CLINIC_NAME} <onboarding@resend.dev>",
+            "to": [recipient],
+            "subject": subject,
+            "html": _build_confirmation_html(record),
+            "text": _build_plain_text(record),
+        })
         logger.info(
             "Confirmation email sent to %s for booking %s.", recipient, record.booking_id
         )
         return True, f"Confirmation email sent to {recipient}."
-
-    except smtplib.SMTPAuthenticationError:
-        msg = "Gmail authentication failed. Check GMAIL_APP_PASSWORD in .env."
-        logger.error(msg)
-        return False, msg
-
-    except smtplib.SMTPRecipientsRefused:
-        msg = f"Email address {recipient} was rejected by the SMTP server."
-        logger.error(msg)
-        return False, msg
 
     except Exception as exc:
         msg = f"Failed to send confirmation email: {exc}"

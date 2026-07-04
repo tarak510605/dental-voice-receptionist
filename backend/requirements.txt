@@ -16,7 +16,7 @@ google-auth-oauthlib==1.2.1
 pytz==2024.2
 
 # ── Email ─────────────────────────────────────────────────────────────────────
-# smtplib is part of the Python standard library — no extra package needed.
+resend==2.10.0
 
 # ── HTTP client (for RetellAI SDK / future use) ───────────────────────────────
 httpx==0.28.1
