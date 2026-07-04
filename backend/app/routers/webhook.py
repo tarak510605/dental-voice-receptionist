@@ -326,12 +326,23 @@ async def retell_webhook(request: Request) -> Dict[str, Any]:
 async def retell_tool_direct(tool_name: str, request: Request) -> Dict[str, Any]:
     """
     Handles direct function calls from RetellAI Conductor flow nodes.
-    The Conductor sends raw parameters as JSON body (no event wrapper).
+    Conductor sends: { "call": {...}, "param1": "val1", ... }
+    We strip the "call" wrapper and normalise field names before dispatching.
     """
     try:
-        arguments = await request.json()
+        body = await request.json()
     except Exception:
-        arguments = {}
+        body = {}
+
+    # Strip the "call" wrapper added by RetellAI Conductor
+    arguments = {k: v for k, v in body.items() if k != "call"}
+
+    # Normalise field name differences between Conductor and our schemas
+    if tool_name == "book_appointment":
+        if "date" in arguments and "preferred_date" not in arguments:
+            arguments["preferred_date"] = arguments.pop("date")
+        if "time" in arguments and "preferred_time" not in arguments:
+            arguments["preferred_time"] = arguments.pop("time")
 
     logger.info("Conductor tool call — tool=%s args=%s", tool_name, json.dumps(arguments))
 
