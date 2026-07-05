@@ -77,7 +77,7 @@ def _handle_book_appointment(arguments: Dict[str, Any]) -> str:
             f"You are booked for {args.service} on {human_date} at {human_time}. "
             f"A confirmation email has been sent to {args.email}."
         )
-        return {"result": msg, "slot_available": "true"}
+        return {"result": msg, "booking_confirmed": "true"}
 
     except ValueError as exc:
         logger.warning("book_appointment: business rule violation: %s", exc)
@@ -99,7 +99,8 @@ def _handle_book_appointment(arguments: Dict[str, Any]) -> str:
                         "unfortunately there are no other slots available that day. "
                         "Would you like to try a different date?"
                     ),
-                    "slot_available": "false",
+                    "booking_confirmed": "false",
+                    "slot_conflict": "true",
                 }
 
             readable_slots = [format_time_human(t) for t in open_slots[:5]]
@@ -112,9 +113,10 @@ def _handle_book_appointment(arguments: Dict[str, Any]) -> str:
                     f"We still have {len(open_slots)} available slot{'s' if len(open_slots) > 1 else ''} that day: "
                     f"{slots_text}. Which time works for you?"
                 ),
-                "slot_available": "false",
+                "booking_confirmed": "false",
+                "slot_conflict": "true",
             }
-        return {"result": err_msg, "slot_available": "false"}
+        return {"result": err_msg, "booking_confirmed": "false", "slot_conflict": "false"}
 
     except RuntimeError as exc:
         logger.error("book_appointment: persistence failure: %s", exc)
@@ -123,7 +125,8 @@ def _handle_book_appointment(arguments: Dict[str, Any]) -> str:
                 "I'm sorry, I was unable to save your appointment due to a technical issue. "
                 "Please call us directly at our clinic number and we will book it for you."
             ),
-            "slot_available": "false",
+            "booking_confirmed": "false",
+            "slot_conflict": "false",
         }
 
 
