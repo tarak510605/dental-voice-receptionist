@@ -71,18 +71,18 @@ def _handle_book_appointment(arguments: Dict[str, Any]) -> str:
         response = booking_service.create_booking(request)
         human_date = format_date_human(args.preferred_date)
         human_time = format_time_human(args.preferred_time)
-        result = (
+        msg = (
             f"Great news! Your appointment has been confirmed. "
             f"Your booking ID is {response.booking_id}. "
             f"You are booked for {args.service} on {human_date} at {human_time}. "
+            f"A confirmation email has been sent to {args.email}."
         )
-        result += f"A confirmation email has been sent to {args.email}."
-        return result
+        return {"result": msg, "slot_available": "true"}
 
     except ValueError as exc:
         logger.warning("book_appointment: business rule violation: %s", exc)
         err_msg = str(exc)
-        # If the slot is taken, fetch remaining slots instead of giving up
+        # If the slot is taken, fetch remaining slots and let Conductor loop back
         if "already booked" in err_msg.lower():
             human_date = format_date_human(args.preferred_date)
             human_time = format_time_human(args.preferred_time)
@@ -93,29 +93,38 @@ def _handle_book_appointment(arguments: Dict[str, Any]) -> str:
                 open_slots = []
 
             if not open_slots:
-                return (
-                    f"I'm sorry, {human_time} on {human_date} has just been taken and "
-                    "unfortunately there are no other slots available that day. "
-                    "Would you like to try a different date?"
-                )
+                return {
+                    "result": (
+                        f"I'm sorry, {human_time} on {human_date} has just been taken and "
+                        "unfortunately there are no other slots available that day. "
+                        "Would you like to try a different date?"
+                    ),
+                    "slot_available": "false",
+                }
 
             readable_slots = [format_time_human(t) for t in open_slots[:5]]
             slots_text = ", ".join(readable_slots[:-1]) + (
                 f" and {readable_slots[-1]}" if len(readable_slots) > 1 else readable_slots[0]
             )
-            return (
-                f"I'm sorry, {human_time} on {human_date} has just been taken. "
-                f"We still have {len(open_slots)} available slot{'s' if len(open_slots) > 1 else ''} that day: "
-                f"{slots_text}. Which time works for you?"
-            )
-        return err_msg
+            return {
+                "result": (
+                    f"I'm sorry, {human_time} on {human_date} has just been taken. "
+                    f"We still have {len(open_slots)} available slot{'s' if len(open_slots) > 1 else ''} that day: "
+                    f"{slots_text}. Which time works for you?"
+                ),
+                "slot_available": "false",
+            }
+        return {"result": err_msg, "slot_available": "false"}
 
     except RuntimeError as exc:
         logger.error("book_appointment: persistence failure: %s", exc)
-        return (
-            "I'm sorry, I was unable to save your appointment due to a technical issue. "
-            "Please call us directly at our clinic number and we will book it for you."
-        )
+        return {
+            "result": (
+                "I'm sorry, I was unable to save your appointment due to a technical issue. "
+                "Please call us directly at our clinic number and we will book it for you."
+            ),
+            "slot_available": "false",
+        }
 
 
 def _handle_check_availability(arguments: Dict[str, Any]) -> Dict[str, Any]:
