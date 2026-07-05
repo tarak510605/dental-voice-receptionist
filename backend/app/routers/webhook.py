@@ -118,12 +118,15 @@ def _handle_book_appointment(arguments: Dict[str, Any]) -> str:
         )
 
 
-def _handle_check_availability(arguments: Dict[str, Any]) -> str:
-    """Handle the 'check_availability' tool call."""
+def _handle_check_availability(arguments: Dict[str, Any]) -> Dict[str, Any]:
+    """Handle the 'check_availability' tool call.
+    Returns a dict with 'result' and 'slot_available' so the Conductor
+    flow can branch on {{slot_available}} = "true" / "false".
+    """
     try:
         args = CheckAvailabilityArgs(**arguments)
     except Exception as exc:
-        return f"I couldn't understand the date or time requested: {exc}"
+        return {"result": f"I couldn't understand the date or time requested: {exc}", "slot_available": "false"}
 
     # If a specific time was requested, check that slot
     if args.time:
@@ -131,10 +134,13 @@ def _handle_check_availability(arguments: Dict[str, Any]) -> str:
         human_date = format_date_human(args.date)
         human_time = format_time_human(args.time)
         if available:
-            return (
-                f"Yes, {human_time} on {human_date} is available. "
-                "Would you like me to book that slot for you?"
-            )
+            return {
+                "result": (
+                    f"Yes, {human_time} on {human_date} is available. "
+                    "Would you like me to book that slot for you?"
+                ),
+                "slot_available": "true",
+            }
         # Slot is taken — fetch remaining available slots for the day
         try:
             avail = get_availability(args.date)
@@ -143,54 +149,66 @@ def _handle_check_availability(arguments: Dict[str, Any]) -> str:
             open_slots = []
 
         if not open_slots:
-            return (
-                f"I'm sorry, {human_time} on {human_date} is already booked, "
-                "and unfortunately there are no other slots available that day. "
-                "Would you like to try a different date?"
-            )
+            return {
+                "result": (
+                    f"I'm sorry, {human_time} on {human_date} is already booked, "
+                    "and unfortunately there are no other slots available that day. "
+                    "Would you like to try a different date?"
+                ),
+                "slot_available": "false",
+            }
 
         readable_slots = [format_time_human(t) for t in open_slots[:5]]
         slots_text = ", ".join(readable_slots[:-1]) + (
             f" and {readable_slots[-1]}" if len(readable_slots) > 1 else readable_slots[0]
         )
-        return (
-            f"I'm sorry, {human_time} on {human_date} is already booked. "
-            f"However, we still have {len(open_slots)} available slot{'s' if len(open_slots) > 1 else ''} that day: "
-            f"{slots_text}. Which of these works for you?"
-        )
+        return {
+            "result": (
+                f"I'm sorry, {human_time} on {human_date} is already booked. "
+                f"However, we still have {len(open_slots)} available slot{'s' if len(open_slots) > 1 else ''} that day: "
+                f"{slots_text}. Which of these works for you?"
+            ),
+            "slot_available": "false",
+        }
 
-    # Return a summary of the day's availability
+    # Return a summary of the day's availability (no specific time requested)
     try:
         avail = get_availability(args.date)
     except Exception as exc:
         logger.error("check_availability error: %s", exc)
-        return "I'm sorry, I couldn't check availability right now. Please try again."
+        return {"result": "I'm sorry, I couldn't check availability right now. Please try again.", "slot_available": "false"}
 
     human_date = format_date_human(args.date)
 
     if not avail.is_working_day:
-        return f"I'm afraid we are not open on {avail.day_of_week}s. We operate Monday to Saturday."
+        return {"result": f"I'm afraid we are not open on {avail.day_of_week}s. We operate Monday to Saturday.", "slot_available": "false"}
 
     if avail.is_holiday:
-        return (
-            f"{human_date} is a public holiday ({avail.holiday_name}). "
-            "We are closed on that day. May I suggest an alternative date?"
-        )
+        return {
+            "result": (
+                f"{human_date} is a public holiday ({avail.holiday_name}). "
+                "We are closed on that day. May I suggest an alternative date?"
+            ),
+            "slot_available": "false",
+        }
 
     open_slots = [s.time for s in avail.available_slots if s.available]
     if not open_slots:
-        return f"Unfortunately we have no available slots on {human_date}. Shall I check another date?"
+        return {"result": f"Unfortunately we have no available slots on {human_date}. Shall I check another date?", "slot_available": "false"}
 
     # Read out up to 5 slots naturally
     readable_slots = [format_time_human(t) for t in open_slots[:5]]
     slots_text = ", ".join(readable_slots[:-1]) + (
         f", and {readable_slots[-1]}" if len(readable_slots) > 1 else readable_slots[0]
     )
-    return (
-        f"On {human_date} we have {len(open_slots)} available slots. "
-        f"Some options are: {slots_text}. "
-        "Which time works best for you?"
-    )
+    return {
+        "result": (
+            f"On {human_date} we have {len(open_slots)} available slots. "
+            f"Some options are: {slots_text}. "
+            "Which time works best for you?"
+        ),
+        "slot_available": "true",
+    }
 
 
 def _handle_get_faq(arguments: Dict[str, Any]) -> str:
@@ -402,5 +420,10 @@ async def retell_tool_direct(tool_name: str, request: Request) -> Dict[str, Any]
         return {"result": "I'm sorry, I don't have that capability right now."}
 
     result = handler(arguments)
+    # If handler returns a dict (e.g. check_availability with slot_available field),
+    # pass it through directly so Conductor can branch on the extra fields.
+    if isinstance(result, dict):
+        logger.info("Tool '%s' result: %s", tool_name, str(result)[:120])
+        return result
     logger.info("Tool '%s' result: %s", tool_name, result[:120])
     return {"result": result}
