@@ -120,8 +120,14 @@ def is_slot_available(date_str: str, time_str: str) -> Tuple[bool, str]:
         holiday_name = get_holiday_name(date_str)
         return False, f"{date_str} is a public holiday ({holiday_name})."
 
+    # Normalise time to HH:MM 24-hour before comparing against stored bookings
     try:
-        taken = sheets_service.is_slot_taken(date_str, time_str)
+        normalised_time = parse_time(time_str).strftime("%H:%M")
+    except ValueError:
+        return False, f"Cannot parse time '{time_str}'. Please use HH:MM or H:MM AM/PM format."
+
+    try:
+        taken = sheets_service.is_slot_taken(date_str, normalised_time)
     except Exception as exc:
         logger.error("Slot conflict check failed: %s", exc)
         return False, "Unable to verify slot availability right now. Please try again."
