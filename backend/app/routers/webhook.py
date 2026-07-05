@@ -108,7 +108,29 @@ def _handle_check_availability(arguments: Dict[str, Any]) -> str:
                 f"Yes, {human_time} on {human_date} is available. "
                 "Would you like me to book that slot for you?"
             )
-        return f"I'm afraid {human_time} on {human_date} is not available. {reason} Can I suggest another time?"
+        # Slot is taken — fetch remaining available slots for the day
+        try:
+            avail = get_availability(args.date)
+            open_slots = [s.time for s in avail.available_slots if s.available]
+        except Exception:
+            open_slots = []
+
+        if not open_slots:
+            return (
+                f"I'm sorry, {human_time} on {human_date} is already booked, "
+                "and unfortunately there are no other slots available that day. "
+                "Would you like to try a different date?"
+            )
+
+        readable_slots = [format_time_human(t) for t in open_slots[:5]]
+        slots_text = ", ".join(readable_slots[:-1]) + (
+            f" and {readable_slots[-1]}" if len(readable_slots) > 1 else readable_slots[0]
+        )
+        return (
+            f"I'm sorry, {human_time} on {human_date} is already booked. "
+            f"However, we still have {len(open_slots)} available slot{'s' if len(open_slots) > 1 else ''} that day: "
+            f"{slots_text}. Which of these works for you?"
+        )
 
     # Return a summary of the day's availability
     try:
