@@ -81,7 +81,34 @@ def _handle_book_appointment(arguments: Dict[str, Any]) -> str:
 
     except ValueError as exc:
         logger.warning("book_appointment: business rule violation: %s", exc)
-        return str(exc)
+        err_msg = str(exc)
+        # If the slot is taken, fetch remaining slots instead of giving up
+        if "already booked" in err_msg.lower():
+            human_date = format_date_human(args.preferred_date)
+            human_time = format_time_human(args.preferred_time)
+            try:
+                avail = get_availability(args.preferred_date)
+                open_slots = [s.time for s in avail.available_slots if s.available]
+            except Exception:
+                open_slots = []
+
+            if not open_slots:
+                return (
+                    f"I'm sorry, {human_time} on {human_date} has just been taken and "
+                    "unfortunately there are no other slots available that day. "
+                    "Would you like to try a different date?"
+                )
+
+            readable_slots = [format_time_human(t) for t in open_slots[:5]]
+            slots_text = ", ".join(readable_slots[:-1]) + (
+                f" and {readable_slots[-1]}" if len(readable_slots) > 1 else readable_slots[0]
+            )
+            return (
+                f"I'm sorry, {human_time} on {human_date} has just been taken. "
+                f"We still have {len(open_slots)} available slot{'s' if len(open_slots) > 1 else ''} that day: "
+                f"{slots_text}. Which time works for you?"
+            )
+        return err_msg
 
     except RuntimeError as exc:
         logger.error("book_appointment: persistence failure: %s", exc)
