@@ -69,7 +69,8 @@ def validate_phone(phone: str) -> Tuple[bool, str]:
     Validate and normalise an Indian mobile number.
     Returns (is_valid, error_message_or_normalised_number).
     """
-    cleaned = re.sub(r"[\s\-\(\)\+]", "", phone)
+    # Strip ALL non-digit characters (handles spaces, dashes, dots the AI may include)
+    cleaned = re.sub(r"\D", "", phone)
     if cleaned.startswith("91") and len(cleaned) == 12:
         cleaned = cleaned[2:]
     elif cleaned.startswith("0") and len(cleaned) == 11:

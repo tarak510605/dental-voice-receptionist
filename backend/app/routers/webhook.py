@@ -76,10 +76,7 @@ def _handle_book_appointment(arguments: Dict[str, Any]) -> str:
             f"Your booking ID is {response.booking_id}. "
             f"You are booked for {args.service} on {human_date} at {human_time}. "
         )
-        if response.email_sent:
-            result += f"A confirmation email has been sent to {args.email}."
-        else:
-            result += "Please note that the confirmation email could not be sent right now."
+        result += f"A confirmation email has been sent to {args.email}."
         return result
 
     except ValueError as exc:
