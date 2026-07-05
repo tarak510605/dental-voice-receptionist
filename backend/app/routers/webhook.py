@@ -77,7 +77,7 @@ def _handle_book_appointment(arguments: Dict[str, Any]) -> str:
             f"You are booked for {args.service} on {human_date} at {human_time}. "
             f"A confirmation email has been sent to {args.email}."
         )
-        return {"result": msg, "booking_confirmed": "true"}
+        return {"result": msg, "booking_confirmed": "true", "booking_id": response.booking_id}
 
     except ValueError as exc:
         logger.warning("book_appointment: business rule violation: %s", exc)
