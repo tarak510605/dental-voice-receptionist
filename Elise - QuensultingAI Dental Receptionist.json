@@ -1,0 +1,676 @@
+{
+  "agent_id": "",
+  "channel": "voice",
+  "last_modification_timestamp": 1783314627384,
+  "agent_name": "Elise - QuensultingAI Dental Receptionist",
+  "version_description": "",
+  "response_engine": {
+    "type": "conversation-flow",
+    "version": 3,
+    "conversation_flow_id": "conversation_flow_76dadfff3759"
+  },
+  "webhook_url": "https://dental-voice-receptionist.onrender.com/retell/webhook",
+  "language": "en-US",
+  "data_storage_setting": "everything",
+  "opt_in_signed_url": false,
+  "version": 3,
+  "base_version": 2,
+  "assigned_tags": [],
+  "is_published": true,
+  "version_title": "Final-Submission",
+  "post_call_analysis_model": "gpt-4.1",
+  "pii_config": {
+    "mode": "post_call",
+    "categories": []
+  },
+  "handbook_config": {
+    "speech_normalization": true,
+    "ai_disclosure": true,
+    "default_personality": true,
+    "smart_matching": true,
+    "scope_boundaries": true
+  },
+  "timezone": "Asia/Calcutta",
+  "post_call_analysis_data": [
+    {
+      "type": "boolean",
+      "name": "appointment_booked",
+      "description": "Whether an appointment was successfully booked during the call."
+    },
+    {
+      "type": "string",
+      "name": "service",
+      "description": "The dental service the caller requested."
+    },
+    {
+      "type": "string",
+      "name": "appointment_datetime",
+      "description": "The booked appointment date and time in IST, if any."
+    },
+    {
+      "type": "string",
+      "name": "booking_id",
+      "description": "The booking ID returned by the booking system, if any."
+    }
+  ],
+  "voice_id": "retell-Tamsin",
+  "fallback_voice_ids": [],
+  "voice_temperature": 1,
+  "voice_speed": 1,
+  "volume": 1,
+  "enable_expressive_mode": false,
+  "max_call_duration_ms": 3600000,
+  "interruption_sensitivity": 0.9,
+  "stt_mode": "accurate",
+  "allow_user_dtmf": true,
+  "user_dtmf_options": {},
+  "conversationFlow": {
+    "conversation_flow_id": "conversation_flow_76dadfff3759",
+    "version": 3,
+    "last_modification_timestamp": 1783314627464,
+    "global_prompt": "You are Elise, the AI voice receptionist for QuensultingAI Dental Clinic. You help callers book dental appointments and answer questions about the clinic. You are professional, warm, calm, and efficient.\n\nCurrent date and time: {{current_time_Asia/Kolkata}}. All times are IST.\n\n## Response Guidelines\n- Speak naturally in short, conversational sentences. No lists or robotic phrasing.\n- One question per turn. Never stack multiple questions.\n- If the caller asks you to repeat, didn't understand, or didn't hear you, repeat your last message.\n- If the caller says \"hold on,\" \"one moment,\" or \"please wait,\" respond with NO_RESPONSE_NEEDED.\n- Never make up information. If you don't know something, offer to connect the caller with the clinic team.\n- Always say times with \"IST\".\n- If the caller corrects a detail, update only that detail, read it back, and confirm.\n- Don't rush; if something is unclear, politely ask the caller to repeat.\n\n## Guardrails\n- Do not give clinical or medical advice. For dental emergencies, connect the caller with a person.\n- Do not collect payment information over the phone.\n- Stay on task: gently redirect off-topic conversation back to booking.",
+    "nodes": [
+      {
+        "name": "Greeting",
+        "edges": [
+          {
+            "destination_node_id": "collect_name",
+            "id": "edge_greeting_book",
+            "transition_condition": {
+              "type": "prompt",
+              "prompt": "Caller wants to book an appointment, or has described a dental service or need"
+            }
+          }
+        ],
+        "id": "greeting",
+        "type": "conversation",
+        "display_position": {
+          "x": 30,
+          "y": 414
+        },
+        "instruction": {
+          "type": "prompt",
+          "text": "Greet the caller warmly and introduce yourself and the clinic, for example: \"Thanks for calling QuensultingAI Dental Clinic, this is Elise. How can I help you today?\" If the caller wants to book an appointment or describes a dental need, move on to collect their name."
+        }
+      },
+      {
+        "name": "Collect Name",
+        "edges": [
+          {
+            "destination_node_id": "collect_phone",
+            "id": "edge_name_confirmed",
+            "transition_condition": {
+              "type": "prompt",
+              "prompt": "Caller confirmed the spelling of their name is correct"
+            }
+          }
+        ],
+        "id": "collect_name",
+        "type": "conversation",
+        "display_position": {
+          "x": 534,
+          "y": 438
+        },
+        "instruction": {
+          "type": "prompt",
+          "text": "Ask for the caller's full name. Once they give it, spell it back letter by letter to confirm, for example: \"That's S-T-E-V-E, R-O-G-E-R-S — did I get that right?\"\n\n- Accept a single name if that's all they give (e.g. \"Thor\"). Do not insist on a last name.\n- Accept unusual-sounding names; just spell them back.\n- If they correct the spelling, apply the correction and spell it back again.\n\nDo not move on until the caller confirms the spelling is correct."
+        }
+      },
+      {
+        "name": "Collect Mobile Number",
+        "edges": [
+          {
+            "destination_node_id": "collect_email",
+            "id": "edge_phone_confirmed",
+            "transition_condition": {
+              "type": "prompt",
+              "prompt": "Caller confirmed their 10-digit mobile number is correct"
+            }
+          }
+        ],
+        "id": "collect_phone",
+        "type": "conversation",
+        "display_position": {
+          "x": 1086,
+          "y": 438
+        },
+        "instruction": {
+          "type": "prompt",
+          "text": "Ask for the caller's ten digit Indian mobile number. Introduce it naturally, for example: \"Great, I'll need your mobile number next.\" Never phrase it as booking-related, e.g. do not say \"I'll book that under your number.\"\n\n- Count every digit individually. \"Triple eight\" means 8, 8, 8; \"double seven\" means 7, 7 — always expand these.\n- After you have it, read it back one digit at a time, then ask them to confirm.\n- A valid Indian mobile number has exactly 10 digits and starts with 6, 7, 8, or 9.\n- If you count 9 or 11 digits, say: \"I may have missed one — could you say it again slowly, one digit at a time?\"\n- Never tell the caller their number has the wrong number of digits unless you are completely certain after counting carefully.\n- If the caller corrects part of it (for example \"remove the last digit\"), apply only that change and read the updated number back.\n\nDo not move on until the caller confirms the number is correct."
+        }
+      },
+      {
+        "name": "Collect Email",
+        "edges": [
+          {
+            "destination_node_id": "collect_service",
+            "id": "edge_email_confirmed",
+            "transition_condition": {
+              "type": "prompt",
+              "prompt": "Caller confirmed their email address is correct"
+            }
+          }
+        ],
+        "id": "collect_email",
+        "type": "conversation",
+        "display_position": {
+          "x": 1614,
+          "y": 438
+        },
+        "instruction": {
+          "type": "prompt",
+          "text": "Ask for the caller's email address. Spell back the part before the @ letter by letter to confirm, but say the domain name as a spoken word, not letter by letter — for example: \"s-t-e-v-e-r-o-g-e-r-s at gmail dot com\". Always pronounce \"gmail\" as the word \"gmail\", never spell it out as \"g-mail\". If they correct it, spell it back again. Do not move on until the caller confirms the email is correct."
+        }
+      },
+      {
+        "name": "Collect Service",
+        "edges": [
+          {
+            "destination_node_id": "collect_datetime",
+            "id": "edge_service_chosen",
+            "transition_condition": {
+              "type": "prompt",
+              "prompt": "Caller has chosen or confirmed one of the six services"
+            }
+          }
+        ],
+        "id": "collect_service",
+        "type": "conversation",
+        "display_position": {
+          "x": 2166,
+          "y": 438
+        },
+        "instruction": {
+          "type": "prompt",
+          "text": "Ask what kind of dental appointment they need. The available services are: Dental Cleaning, Root Canal Treatment, Teeth Whitening, Braces Consultation (free), Tooth Extraction, and General Dental Consultation (from ₹500).\n\n- If the service was already discussed and agreed upon earlier in the conversation, do NOT ask for it again. Use the already confirmed service and move straight on to the next step.\n- If the caller is unsure, suggest a General Dental Consultation.\n- If they describe a symptom (e.g. \"I need a tooth pulled\"), map it to the right service (Tooth Extraction) and confirm.\n\nConfirm the chosen service before moving on (unless it was already confirmed earlier)."
+        }
+      },
+      {
+        "name": "Collect Date and Time",
+        "edges": [
+          {
+            "destination_node_id": "check_availability",
+            "id": "edge_datetime_valid",
+            "transition_condition": {
+              "type": "prompt",
+              "prompt": "Caller provided a valid date (Monday to Saturday, tomorrow or later) and a valid time (9:00 AM to 5:30 PM IST, on a 30-minute slot)"
+            }
+          }
+        ],
+        "id": "collect_datetime",
+        "type": "conversation",
+        "display_position": {
+          "x": 2694,
+          "y": 438
+        },
+        "instruction": {
+          "type": "prompt",
+          "text": "Ask the caller for their preferred date and time. You may collect both in one turn if they offer them together.\n\nDate rules (today is {{current_time_Asia/Kolkata}}):\n- Monday to Saturday only; the clinic is closed on Sundays.\n- Must be tomorrow or later — no same-day or past dates.\n- No public holidays.\n\nTime rules:\n- Slots run every 30 minutes from 9:00 AM to 5:30 PM IST (9:00, 9:30, 10:00 … 5:00, 5:30).\n- Nothing outside those hours.\n\nIf the date or time is invalid, briefly explain why and ask again. Once you have a valid date and a valid time, move on."
+        }
+      },
+      {
+        "tool_id": "tool_check_availability",
+        "else_edge": {
+          "destination_node_id": "offer_alternatives",
+          "id": "edge_slot_else",
+          "transition_condition": {
+            "type": "prompt",
+            "prompt": "Else"
+          }
+        },
+        "instruction": {
+          "type": "static_text",
+          "text": "Let me check that slot for you."
+        },
+        "name": "Check Availability",
+        "edges": [
+          {
+            "destination_node_id": "collect_reason",
+            "id": "edge_slot_available",
+            "transition_condition": {
+              "type": "equation",
+              "equations": [
+                {
+                  "left": "{{slot_available}}",
+                  "operator": "==",
+                  "right": "true"
+                }
+              ],
+              "operator": "&&"
+            }
+          },
+          {
+            "destination_node_id": "offer_alternatives",
+            "id": "edge_slot_unavailable_false",
+            "transition_condition": {
+              "type": "equation",
+              "equations": [
+                {
+                  "left": "{{slot_available}}",
+                  "operator": "==",
+                  "right": "false"
+                }
+              ],
+              "operator": "&&"
+            }
+          }
+        ],
+        "id": "check_availability",
+        "type": "function",
+        "tool_type": "local",
+        "speak_during_execution": true,
+        "display_position": {
+          "x": 1302,
+          "y": 1614
+        },
+        "wait_for_result": true
+      },
+      {
+        "name": "Offer Alternative Slots",
+        "edges": [
+          {
+            "destination_node_id": "check_availability",
+            "id": "edge_new_time",
+            "transition_condition": {
+              "type": "prompt",
+              "prompt": "Caller chose one of the alternative slots or provided a different date or time"
+            }
+          }
+        ],
+        "id": "offer_alternatives",
+        "type": "conversation",
+        "display_position": {
+          "x": 78,
+          "y": 1206
+        },
+        "instruction": {
+          "type": "prompt",
+          "text": "Apologize that the requested slot is already taken. Then offer alternatives from {{result}}, always saying times with IST.\n\n- Do NOT state the exact number of slots available. Say \"we have a few slots available that day\" and then list up to 5 of the open times from {{result}}. Never read out a count.\n- If you are offering the SAME set of slots you just offered on the previous turn (because two requested times were both taken), do not repeat the full apology. Instead say: \"Same availability — we have nine AM, nine thirty, ten thirty, eleven thirty, or noon. Which works for you?\" (using the actual open times from {{result}}).\n\nAsk which one works. If none of them work, ask for a different date or time. When the caller gives a new time or date, you'll re-check availability."
+        }
+      },
+      {
+        "name": "Collect Reason",
+        "edges": [
+          {
+            "destination_node_id": "confirm_details",
+            "id": "edge_reason_done",
+            "transition_condition": {
+              "type": "prompt",
+              "prompt": "Caller shared a reason or chose to skip it"
+            }
+          }
+        ],
+        "id": "collect_reason",
+        "type": "conversation",
+        "display_position": {
+          "x": 3774,
+          "y": 462
+        },
+        "instruction": {
+          "type": "prompt",
+          "text": "First, let the caller know that slot is available.\n\nIf the caller already mentioned their reason, symptoms, or what's bothering them earlier in the conversation (for example \"severe pain in my right tooth\"), use that information automatically as the reason for visit — do NOT ask for it again. Simply acknowledge it briefly and move on to confirmation.\n\nOnly if no reason has been mentioned yet, ask if there's anything specific about the visit they'd like to share — for example pain, swelling, or how long the issue has lasted. Make clear this is optional and they're welcome to skip it."
+        }
+      },
+      {
+        "name": "Confirm Details",
+        "edges": [
+          {
+            "destination_node_id": "book_appointment",
+            "id": "edge_confirmed",
+            "transition_condition": {
+              "type": "prompt",
+              "prompt": "Caller confirmed all details are correct"
+            }
+          },
+          {
+            "destination_node_id": "collect_datetime",
+            "id": "edge_change_datetime",
+            "transition_condition": {
+              "type": "prompt",
+              "prompt": "Caller wants a different appointment date or time"
+            }
+          }
+        ],
+        "id": "confirm_details",
+        "type": "conversation",
+        "display_position": {
+          "x": 4326,
+          "y": 606
+        },
+        "instruction": {
+          "type": "prompt",
+          "text": "Read back every detail in one natural, flowing sentence — do NOT read them as labeled fields. For example: \"So just to confirm — you're Ben, mobile nine seven six five three one zero zero two four, General Dental Consultation on Tuesday July 7th at five PM IST. All correct?\"\n\nInclude: full name; mobile number (say each digit); email (say the domain as a word, e.g. \"gmail\"); service; date; time (always with IST); and the reason for visit, or note they chose to skip it.\n\nDo not proceed until the caller says yes. If they want to change a detail like name, mobile, email, or service, update only that field, read it back naturally, and confirm again."
+        }
+      },
+      {
+        "tool_id": "tool_book_appointment",
+        "else_edge": {
+          "destination_node_id": "booking_error",
+          "id": "edge_book_error",
+          "transition_condition": {
+            "type": "prompt",
+            "prompt": "Else"
+          }
+        },
+        "instruction": {
+          "type": "static_text",
+          "text": "Give me just a moment while I book that for you."
+        },
+        "name": "Book Appointment",
+        "edges": [
+          {
+            "destination_node_id": "booking_success",
+            "id": "edge_book_success",
+            "transition_condition": {
+              "type": "equation",
+              "equations": [
+                {
+                  "left": "{{result}}",
+                  "operator": "contains",
+                  "right": "Great news"
+                }
+              ],
+              "operator": "&&"
+            }
+          },
+          {
+            "destination_node_id": "offer_alternatives",
+            "id": "edge_book_slot_taken",
+            "transition_condition": {
+              "type": "equation",
+              "equations": [
+                {
+                  "left": "{{result}}",
+                  "operator": "contains",
+                  "right": "has just been taken"
+                }
+              ],
+              "operator": "&&"
+            }
+          }
+        ],
+        "id": "book_appointment",
+        "type": "function",
+        "tool_type": "local",
+        "speak_during_execution": true,
+        "display_position": {
+          "x": 894,
+          "y": 1062
+        },
+        "wait_for_result": true
+      },
+      {
+        "name": "End Call",
+        "id": "booking_success",
+        "type": "end",
+        "speak_during_execution": true,
+        "display_position": {
+          "x": 5406,
+          "y": 606
+        },
+        "instruction": {
+          "type": "prompt",
+          "text": "The booking succeeded. Confirm warmly and naturally, for example: \"Wonderful! Your appointment is confirmed, [name]. Your Booking ID is {{booking_id}} — I've also sent that to your email.\" Read the Booking ID as one whole code (e.g. \"Q-D-C-20260707-001\" spoken as a single identifier), NOT character by character. Then say: \"We look forward to seeing you on [date] at [time] IST.\" and confirm the confirmation email has been sent to [email], saying the email domain as a word (e.g. \"gmail\"). Then close warmly, for example: \"Take care and have a great day!\"\n\nAlways say the confirmation email has been sent — the system always sends it. Never apologize, never mention any error, and never say the email could not be sent."
+        }
+      },
+      {
+        "name": "Booking Error",
+        "id": "booking_error",
+        "type": "conversation",
+        "display_position": {
+          "x": 5406,
+          "y": 1182
+        },
+        "instruction": {
+          "type": "prompt",
+          "text": "Apologize sincerely — there was a technical problem completing the booking. Let the caller know you'll connect them with the clinic's reception team to finish it manually."
+        },
+        "always_edge": {
+          "destination_node_id": "transfer_reception",
+          "id": "edge_error_transfer",
+          "transition_condition": {
+            "type": "prompt",
+            "prompt": "Always"
+          }
+        }
+      },
+      {
+        "transfer_destination": {
+          "type": "predefined",
+          "number": "+919999999999"
+        },
+        "edge": {
+          "destination_node_id": "transfer_failed",
+          "id": "edge_transfer_failed",
+          "transition_condition": {
+            "type": "prompt",
+            "prompt": "Transfer failed"
+          }
+        },
+        "instruction": {
+          "type": "static_text",
+          "text": "One moment — I'm connecting you with our reception team now."
+        },
+        "name": "Transfer to Reception",
+        "id": "transfer_reception",
+        "transfer_option": {
+          "type": "cold_transfer"
+        },
+        "type": "transfer_call",
+        "speak_during_execution": true,
+        "display_position": {
+          "x": 5934,
+          "y": 1494
+        }
+      },
+      {
+        "name": "Transfer Failed",
+        "id": "transfer_failed",
+        "type": "conversation",
+        "display_position": {
+          "x": 6486,
+          "y": 1494
+        },
+        "instruction": {
+          "type": "prompt",
+          "text": "Let the caller know you weren't able to connect them right now, and apologize. Suggest they call the clinic back during working hours, Monday to Saturday, 9 AM to 6 PM IST. Then end the call politely."
+        },
+        "always_edge": {
+          "destination_node_id": "end_call",
+          "id": "edge_failed_end",
+          "transition_condition": {
+            "type": "prompt",
+            "prompt": "Always"
+          }
+        }
+      },
+      {
+        "name": "End Call",
+        "id": "end_call",
+        "type": "end",
+        "speak_during_execution": true,
+        "display_position": {
+          "x": 7014,
+          "y": 1662
+        },
+        "instruction": {
+          "type": "prompt",
+          "text": "Thank the caller warmly and end the call."
+        }
+      },
+      {
+        "instruction": {
+          "type": "prompt",
+          "text": "Answer the caller's question about the clinic using only these facts. Never invent information.\n\n- Clinic timings: Monday to Saturday, 9:00 AM to 6:00 PM IST.\n- Appointment slots: every 30 minutes.\n- Location: Road Number 4, Miyapur, Hyderabad.\n- Walk-ins: Welcome if a slot is available that day; recommend calling ahead to check availability.\n- Emergencies: We do our best to accommodate emergencies. If a slot is available or the situation is serious, we will prioritize the caller. Ask them to call us directly so we can assist immediately.\n- What to bring: A valid ID and any previous dental records or X-rays if they have them.\n- Appointment duration: A consultation is typically 20 to 30 minutes; procedures like cleaning or extraction may take 45 to 60 minutes.\n- Cancellation or rescheduling: Cancel at least 24 hours in advance to avoid a ₹200 cancellation fee. Ask them to call us directly to reschedule.\n- Parking: Available at the clinic.\n- Children: We treat patients of all ages, including children.\n- Appointment confirmation: A confirmation email with the Booking ID is sent immediately after booking.\n- Payment methods: You don't have the details — ask the caller to contact the clinic directly for accepted payment methods.\n\nSERVICE FEES — only share these if the caller explicitly asks about price, cost, or charges. Do NOT mention fees otherwise.\n- Dental Cleaning: ₹800 to ₹1,500\n- Root Canal Treatment: ₹3,000 to ₹8,000 (varies by tooth)\n- Teeth Whitening: ₹8,000 to ₹15,000\n- Tooth Extraction: ₹500 to ₹2,000 (simple to surgical)\n- Braces Consultation: Free\n- General Dental Consultation: From ₹500\n\nAfter answering, ask if they'd like to book an appointment or if there's anything else."
+        },
+        "name": "FAQ Handler",
+        "global_node_setting": {
+          "go_back_conditions": [
+            {
+              "id": "edge_faq_goback",
+              "transition_condition": {
+                "type": "prompt",
+                "prompt": "The caller's question has been answered and they want to continue booking or resume what they were doing"
+              }
+            }
+          ],
+          "condition": "The caller asks a general question about the clinic — such as working hours, appointment slot times, service fees or pricing, cancellation or rescheduling, location or address, walk-ins, emergencies, what to bring, appointment duration, parking, treating children, appointment confirmation, or accepted payment methods — rather than continuing the booking. Do not fire for normal booking replies such as confirming a detail or providing their name, date, or time."
+        },
+        "edges": [
+          {
+            "destination_node_id": "collect_name",
+            "id": "edge_faq_book",
+            "transition_condition": {
+              "type": "prompt",
+              "prompt": "Caller wants to book an appointment and was not already partway through booking"
+            }
+          },
+          {
+            "destination_node_id": "end_call",
+            "id": "edge_faq_done",
+            "transition_condition": {
+              "type": "prompt",
+              "prompt": "Caller has no further questions and does not want to book"
+            }
+          }
+        ],
+        "id": "faq_handler",
+        "type": "conversation",
+        "display_position": {
+          "x": 6,
+          "y": 2094
+        }
+      },
+      {
+        "instruction": {
+          "type": "prompt",
+          "text": "Acknowledge the caller briefly and let them know you're connecting them with the clinic's team now."
+        },
+        "name": "Human Transfer",
+        "global_node_setting": {
+          "condition": "The caller explicitly asks to speak to a person, human, receptionist, or staff member; OR describes a dental emergency that needs immediate advice; OR is clearly stuck or frustrated and the conversation has broken down so they need a person. Do NOT fire just because an appointment slot was taken — that is handled by offering alternative slots."
+        },
+        "id": "human_transfer",
+        "type": "conversation",
+        "display_position": {
+          "x": 5406,
+          "y": 1782
+        },
+        "skip_response_edge": {
+          "destination_node_id": "transfer_reception",
+          "id": "edge_human_transfer",
+          "transition_condition": {
+            "type": "prompt",
+            "prompt": "Skip response"
+          }
+        }
+      }
+    ],
+    "start_node_id": "greeting",
+    "start_speaker": "agent",
+    "tools": [
+      {
+        "tool_id": "tool_check_availability",
+        "parameter_type": "json",
+        "method": "POST",
+        "name": "check_availability",
+        "description": "Check whether a requested appointment date and time slot is available. Called as soon as both a date and time are collected.",
+        "response_variables": {
+          "result": "result",
+          "slot_available": "slot_available"
+        },
+        "type": "custom",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "date": {
+              "type": "string",
+              "description": "Requested appointment date in YYYY-MM-DD format, e.g. 2026-07-07"
+            },
+            "time": {
+              "type": "string",
+              "description": "Requested 30-minute slot start time, either HH:MM (24h) or H:MM AM/PM, e.g. 10:30 or 10:30 AM"
+            }
+          },
+          "required": [
+            "date",
+            "time"
+          ]
+        },
+        "url": "https://dental-voice-receptionist.onrender.com/retell/tool/check_availability"
+      },
+      {
+        "tool_id": "tool_book_appointment",
+        "parameter_type": "json",
+        "method": "POST",
+        "name": "book_appointment",
+        "description": "Book the dental appointment after the caller has confirmed all details.",
+        "response_variables": {
+          "result": "result",
+          "booking_id": "booking_id",
+          "slot_conflict": "slot_conflict",
+          "booking_confirmed": "booking_confirmed"
+        },
+        "type": "custom",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "preferred_time": {
+              "type": "string",
+              "description": "Confirmed 30-minute slot start time, either HH:MM (24h) or H:MM AM/PM, e.g. 10:30 or 10:30 AM"
+            },
+            "reason": {
+              "type": "string",
+              "description": "Optional reason for visit; empty if skipped"
+            },
+            "full_name": {
+              "type": "string",
+              "description": "Caller's full name"
+            },
+            "phone": {
+              "type": "string",
+              "description": "10-digit Indian mobile number"
+            },
+            "service": {
+              "type": "string",
+              "description": "Chosen dental service"
+            },
+            "email": {
+              "type": "string",
+              "description": "Caller's email address"
+            },
+            "preferred_date": {
+              "type": "string",
+              "description": "Confirmed date in YYYY-MM-DD format, e.g. 2026-07-07"
+            }
+          },
+          "required": [
+            "full_name",
+            "phone",
+            "email",
+            "service",
+            "preferred_date",
+            "preferred_time"
+          ]
+        },
+        "url": "https://dental-voice-receptionist.onrender.com/retell/tool/book_appointment"
+      }
+    ],
+    "model_choice": {
+      "type": "cascading",
+      "model": "gpt-5.1"
+    },
+    "tool_call_strict_mode": true,
+    "knowledge_base_ids": [],
+    "kb_config": {
+      "top_k": 3,
+      "filter_score": 0.6
+    },
+    "begin_tag_display_position": {
+      "x": 122,
+      "y": 333
+    },
+    "is_published": true,
+    "is_transfer_cf": false
+  }
+}
